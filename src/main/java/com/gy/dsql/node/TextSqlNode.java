@@ -11,7 +11,8 @@ import java.util.Set;
 
 public class TextSqlNode implements SqlNode {
     String text;
-
+    boolean ENABLE_DEFAULT_VALUE = true;
+    String DEFAULT_VALUE_SEPARATOR = ":";
     public TextSqlNode(String text) {
         this.text = text;
     }
@@ -21,6 +22,23 @@ public class TextSqlNode implements SqlNode {
         GenericTokenParser tokenParser = new GenericTokenParser("${", "}", new TokenHandler() {
             @Override
             public String handleToken(String paramName) {
+
+                //支持默认值功能
+                if(ENABLE_DEFAULT_VALUE){
+                    String key = paramName;
+                    int separatorIndex = paramName.indexOf(DEFAULT_VALUE_SEPARATOR);
+                    String defaultValue = null;
+                    if (separatorIndex >= 0) {
+                        key = paramName.substring(0, separatorIndex);
+                        defaultValue = paramName.substring(separatorIndex + DEFAULT_VALUE_SEPARATOR.length());
+                        //获取值
+                        Object value = context.getOgnlValue(key);
+                        return value == null ? defaultValue : value.toString();
+                    }else {
+                        Object value = context.getOgnlValue(key);
+                        return value == null ? "" : value.toString();
+                    }
+                }
                 Object value = context.getOgnlValue(paramName);
                 return value == null ? "" : value.toString();
             }

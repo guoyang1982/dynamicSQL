@@ -43,7 +43,7 @@ public class TestOrange {
     @Test
     public void testIf() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = "id &lt;= #{maxId}";
+        String sql = "<script>id &lt;= #{maxId}</script>";
         Map<String, Object> map = new HashMap<>();
         map.put("maxId", 10);
 
@@ -56,7 +56,7 @@ public class TestOrange {
     @Test
     public void testTrim() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = "<trim prefix='(' suffix=')' suffixesToOverride=',' prefixesToOverride='and' ><foreach collection='list' index='idx' open='(' separator=',' close=')'>#{item.name}== #{idx}</foreach><if test='id!=null'>  and xyz.,</if></trim>";
+        String sql = "<script><trim prefix='(' suffix=')' suffixesToOverride=',' prefixesToOverride='and' ><foreach collection='list' index='idx' open='(' separator=',' close=')'>#{item.name}== #{idx}</foreach><if test='id!=null'>  and xyz.,</if></trim></script>";
         Map<String, Object> map = new HashMap<>();
         map.put("id", 2);
         ArrayList<User> arrayList = new ArrayList<>();
@@ -72,7 +72,7 @@ public class TestOrange {
     @Test
     public void testWhere() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = "select * from table <where> <if test='id!=null'>   id = ${id}</if><if test='id==2'>  and id = #{id}</if> or name =${name} </where>";
+        String sql = "<script>select * from table <where> <if test='id!=null'>   id = ${id}</if><if test='id==2'>  and id = #{id}</if> or name =${name:tttt} </where></script>";
         Map<String, Object> map = new HashMap<>();
         map.put("id", 2);
         ArrayList<User> arrayList = new ArrayList<>();
@@ -89,16 +89,18 @@ public class TestOrange {
     @Test
     public void testForeach() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("select * from user where name in "
+        String sql = ("<script>select * from user where name in "
             + "<foreach collection='list' index='idx' open='(' separator=',' close=')'>"
             + "${item}"
-            + "</foreach>");
+            + "</foreach>"
+            + " and desic = ${default:hehe}</script>");
         Map<String, Object> map = new HashMap<>();
 
         ArrayList arrayList = new ArrayList<>();
         arrayList.add("gy");
         arrayList.add("jerry");
         map.put("list", arrayList.toArray());
+//        map.put("default","gg");
 
         SqlMeta sqlMeta = engine.parse(sql, map);
         System.out.println(sqlMeta.getSql());
@@ -108,7 +110,7 @@ public class TestOrange {
     @Test
     public void testChoose() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("select * from user "
+        String sql = ("<script>select * from user "
             + "<where>"
             + "<choose>"
             + "<when test='title != null'>"
@@ -121,7 +123,7 @@ public class TestOrange {
             + " AND featured = 1"
             + "</otherwise>"
             + "</choose>"
-            + "</where>");
+            + "</where></script>");
         Map<String, Object> map = new HashMap<>();
         map.put("title", "ggg");
         User user = new User(10, "asdf");
@@ -135,7 +137,7 @@ public class TestOrange {
     @Test
     public void testForeachIF() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("select * from user where name in <foreach collection='list' index='idx' open='(' separator=',' close=')'>${item.name}== #{idx}<if test='id!=null'>  and id = #{id}</if></foreach>");
+        String sql = ("<script>select * from user where name in <foreach collection='list' index='idx' open='(' separator=',' close=')'>${item.name}== #{idx}<if test='id!=null'>  and id = #{id}</if></foreach></script>");
         Map<String, Object> map = new HashMap<>();
 
         ArrayList<User> arrayList = new ArrayList<>();
@@ -174,27 +176,22 @@ public class TestOrange {
     @Test
     public void testMultiForeach() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("select * from a where name in <foreach collection='list' item='name' index='index' open='(' separator=',' close=')'>'${name}'</foreach> and id in <foreach collection='list2' open='{' separator=',' close='}'>#{item}</foreach>");
+        String sql = ("<script>select * from a where name in <foreach collection='list' item='name' index='index' open='(' separator=',' close=')'>'${name}'</foreach>"
+            + " and id in <foreach collection='list2' open='{' separator=',' close='}'>#{item}</foreach></script>");
         Map<String, Object> map = new HashMap<>();
-
         ArrayList<String> list = new ArrayList<String>() {{
             add("a");
             add("b");
             add("gy");
-
         }};
-
         map.put("list", list);
-
         ArrayList<String> list2 = new ArrayList<String>() {{
             add("c");
             add("d");
             add("c");
             add("d");
         }};
-
         map.put("list2", list2.toArray());
-
         SqlMeta sqlMeta = engine.parse(sql, map);
         System.out.println(sqlMeta.getSql());
         sqlMeta.getJdbcParamValues().forEach(System.out::println);
@@ -203,7 +200,7 @@ public class TestOrange {
     @Test
     public void testSet() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("update<set><if test='id !=null'> id = ${a} ,</if><if test='id !=null'> id = ${id} , </if></set>");
+        String sql = ("<script>update<set><if test='id !=null'> id = ${a} ,</if><if test='id !=null'> id = ${id} , </if></set></script>");
         Map<String, Object> map = new HashMap<>();
         map.put("id", 10);
         User user = new User(10, "asdf");
@@ -212,7 +209,6 @@ public class TestOrange {
         SqlMeta sqlMeta = engine.parse(sql, map);
         System.out.println(sqlMeta.getSql());
         sqlMeta.getJdbcParamValues().forEach(System.out::println);
-
     }
 
     @Test
@@ -223,11 +219,10 @@ public class TestOrange {
         set.stream().forEach(System.out::println);
     }
 
-
     @Test
     public void testSet2() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("select ${dimensionValues},${targetValues} "
+        String sql = ("<script>select ${dimensionValues:20 sdf(sub)},${targetValues} "
             + "from"
             + "(select * "
             + "from boss.dwd_da_shuffle_hive_qiyue_order_widetable_order_analysis"
@@ -239,7 +234,7 @@ public class TestOrange {
             + "        ${b}"
             + ") a "
             + "LEFT join boss.hive_dim_fv_channel b on split(a.vip_fv, '-')[0] = b.vip_fv "
-            + "group by ${dimensionCodes}");
+            + "group by ${dimensionCodes}</script>");
         Map<String, Object> map = new HashMap<>();
         map.put("dimensionValues", 10);
         map.put("targetValues", 10);
@@ -255,6 +250,34 @@ public class TestOrange {
         System.out.println(sqlMeta.getSql());
         sqlMeta.getJdbcParamValues().forEach(System.out::println);
 
+    }
+
+    @Test
+    public void testSet3() {
+        DynamicSqlEngine engine = new DynamicSqlEngine();
+        String sql = ("select ${dimensionValues:20},${targetValues} "
+            + "from"
+            + "(select * "
+            + "from boss.dwd_da_shuffle_hive_qiyue_order_widetable_order_analysis"
+            + "        where"
+            + "        dt = '${dt}'"
+            + "        and vip_order_status=1"
+            + "        and vip_product_type = 0"
+            + "        and id = ${b}"
+            + "        and user_name = ${user.name}"
+            + ") a "
+            + "LEFT join boss.hive_dim_fv_channel b on split(a.vip_fv, '-')[0] = b.vip_fv "
+            + "group by ${dimensionCodes}");
+        Map<String, Object> map = new HashMap<>();
+        map.put("dimensionValues", 10);
+        map.put("targetValues", "10");
+        map.put("dt", "10");
+        map.put("payStartTime", "102");
+        map.put("b", "10");
+        map.put("dimensionCodes", "10");
+
+        SqlMeta sqlMeta = engine.parse(sql, map);
+        System.out.println(sqlMeta.getSql());
     }
 
 //    @Test

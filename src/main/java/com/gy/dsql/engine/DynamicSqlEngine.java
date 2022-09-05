@@ -5,12 +5,15 @@ import com.gy.dsql.SqlMeta;
 import com.gy.dsql.context.DynamicContext;
 import com.gy.dsql.node.SqlNode;
 import com.gy.dsql.handler.XmlParser;
+import com.gy.dsql.token.GenericTokenParser;
 import com.gy.dsql.token.TokenHandler;
 import com.gy.dsql.token.TokenParser;
+import com.gy.dsql.token.VariableTokenHandler;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 
@@ -19,13 +22,25 @@ public class DynamicSqlEngine {
     Cache cache = new Cache();
 
     public SqlMeta parse(String text, Map<String, Object> params) {
-        text = String.format("<root>%s</root>", text);
+        if (!text.startsWith("<script>")) {
+            String sql = getTokenParserSql(text, params);
+            return new SqlMeta(sql, null);
+        }
         SqlNode sqlNode = parseXml2SqlNode(text);
         DynamicContext context = new DynamicContext(params);
         parseSqlText(sqlNode, context);
         parseParameter(context);
         SqlMeta sqlMeta = new SqlMeta(context.getSql(), context.getJdbcParameters());
         return sqlMeta;
+    }
+
+    private String getTokenParserSql(String text, Map<String, Object> params) {
+        Properties properties = new Properties();
+        properties.putAll(params);
+//        Map<String, String> map = new HashMap<String, String>((Map) properties);
+        VariableTokenHandler handler = new VariableTokenHandler(properties);
+        GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
+        return parser.parse(text);
     }
 
     public Set<String> parseParameter(String text) {
