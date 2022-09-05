@@ -26,6 +26,10 @@ public class DynamicSqlEngine {
             String sql = getTokenParserSql(text, params);
             return new SqlMeta(sql, null);
         }
+//        Properties properties = new Properties();
+//        properties.putAll(params);
+//        Map<String, Object> map = new HashMap<String, Object>((Map) properties);
+//        params = map;
         SqlNode sqlNode = parseXml2SqlNode(text);
         DynamicContext context = new DynamicContext(params);
         parseSqlText(sqlNode, context);
@@ -37,7 +41,6 @@ public class DynamicSqlEngine {
     private String getTokenParserSql(String text, Map<String, Object> params) {
         Properties properties = new Properties();
         properties.putAll(params);
-//        Map<String, String> map = new HashMap<String, String>((Map) properties);
         VariableTokenHandler handler = new VariableTokenHandler(properties);
         GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
         return parser.parse(text);

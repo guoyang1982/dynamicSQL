@@ -231,7 +231,8 @@ public class TestOrange {
             + "<if test='payStartTime !=null'>and pay_time>='${payStartTime}'</if>"
             + "        and vip_order_status=1"
             + "        and vip_product_type = 0"
-            + "        ${b}"
+            + "        and id = ${b}"
+            + "        and user_name = ${user.name}"
             + ") a "
             + "LEFT join boss.hive_dim_fv_channel b on split(a.vip_fv, '-')[0] = b.vip_fv "
             + "group by ${dimensionCodes}</script>");
@@ -239,9 +240,9 @@ public class TestOrange {
         map.put("dimensionValues", 10);
         map.put("targetValues", 10);
         map.put("dt", 10);
-        map.put("payStartTime", 102);
         map.put("b", 10);
         map.put("dimensionCodes", 10);
+        map.put("payStartTime","2022-09-09");
 
         User user = new User(10, "asdf");
         map.put("user", user);
@@ -275,6 +276,8 @@ public class TestOrange {
         map.put("payStartTime", "102");
         map.put("b", "10");
         map.put("dimensionCodes", "10");
+        User user = new User(10, "asdf");
+        map.put("user", user);
 
         SqlMeta sqlMeta = engine.parse(sql, map);
         System.out.println(sqlMeta.getSql());
