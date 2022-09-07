@@ -137,7 +137,40 @@ public class TestOrange {
     @Test
     public void testForeachIF() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("<script>select * from user where name in <foreach collection='list' index='idx' open='(' separator=',' close=')'>${item.name}== #{idx}<if test='id!=null'>  and id = #{id}</if></foreach></script>");
+        String sql = (""
+            + "<script>select * from user where "
+            + "<if test='id!=null'>"
+            + "name in <foreach collection='list' index='idx' open='(' separator=',' close=')'>${item.name}== ${item.id}"
+            + "<if test='id!=null'>  and id = ${id}</if>"
+            + "</foreach>"
+            + "</if>"
+            + "</script>");
+        Map<String, Object> map = new HashMap<>();
+
+        ArrayList<User> arrayList = new ArrayList<>();
+        arrayList.add(new User(10, "tom"));
+        arrayList.add(new User(11, "jerry"));
+        map.put("list", arrayList.toArray());
+        map.put("id", 100);
+
+        SqlMeta sqlMeta = engine.parse(sql, map);
+        System.out.println(sqlMeta.getSql());
+        sqlMeta.getJdbcParamValues().forEach(System.out::println);
+    }
+
+    @Test
+    public void testForeachTrim() {
+        DynamicSqlEngine engine = new DynamicSqlEngine();
+        String sql = (""
+            + "<script>select * from user where "
+            + "<if test='id!=null'>"
+            + "<trim  prefixesToOverride='and' suffixesToOverride=')'  prefix='set '>"
+            + "and name in <foreach collection='list' index='idx' open='(' separator=',' close=')'>${item.name}== ${item.id}"
+            + "<if test='id!=null'>  and id = ${id} and</if>"
+            + "</foreach>"
+            + "</trim>"
+            + "</if>"
+            + "</script>");
         Map<String, Object> map = new HashMap<>();
 
         ArrayList<User> arrayList = new ArrayList<>();
@@ -176,8 +209,10 @@ public class TestOrange {
     @Test
     public void testMultiForeach() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("<script>select * from a where name in <foreach collection='list' item='name' index='index' open='(' separator=',' close=')'>'${name}'</foreach>"
-            + " and id in <foreach collection='list2' open='{' separator=',' close='}'>#{item}</foreach></script>");
+        String sql = ("<script>"
+            + "select * from a where name in <foreach collection='list' item='name' index='index' open='(' separator=',' close=')'>'${name}'</foreach>"
+            + " and id in <foreach collection='list2' open='{' separator=',' close='}'>#{item}</foreach>"
+            + "</script>");
         Map<String, Object> map = new HashMap<>();
         ArrayList<String> list = new ArrayList<String>() {{
             add("a");
@@ -200,7 +235,7 @@ public class TestOrange {
     @Test
     public void testSet() {
         DynamicSqlEngine engine = new DynamicSqlEngine();
-        String sql = ("<script>update<set><if test='id !=null'> id = ${a} ,</if><if test='id !=null'> id = ${id} , </if></set></script>");
+        String sql = ("<script>update<set><if test='id !=null'> id = ${user.name} ,</if><if test='id !=null'> id = ${id} , </if></set></script>");
         Map<String, Object> map = new HashMap<>();
         map.put("id", 10);
         User user = new User(10, "asdf");
@@ -228,10 +263,15 @@ public class TestOrange {
             + "from boss.dwd_da_shuffle_hive_qiyue_order_widetable_order_analysis"
             + "        where"
             + "        dt = '${dt}'"
-            + "<if test='payStartTime !=null'>and pay_time>='${payStartTime}'</if>"
+            + "<if test='payStartTime !=null'>and pay_time>='${payStartTime}'"
             + "        and vip_order_status=1"
             + "        and vip_product_type = 0"
-            + "        and id = ${b}"
+            + "<if test='b !=null'>"
+
+            + "  and id = ${b}"
+            + "</if>"
+
+            + "</if>"
             + "        and user_name = ${user.name}"
             + ") a "
             + "LEFT join boss.hive_dim_fv_channel b on split(a.vip_fv, '-')[0] = b.vip_fv "
@@ -240,7 +280,7 @@ public class TestOrange {
         map.put("dimensionValues", 10);
         map.put("targetValues", 10);
         map.put("dt", 10);
-        map.put("b", 10);
+//        map.put("b", 10);
         map.put("dimensionCodes", 10);
         map.put("payStartTime","2022-09-09");
 
